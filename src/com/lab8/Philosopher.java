@@ -2,8 +2,8 @@ package com.lab8;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
  * Класс философа, наследованный от класса Thread
@@ -19,7 +19,9 @@ public class Philosopher extends Thread {
   /**
    * Общие вилки, для всех философов
    */
-  private static final boolean[] forks = new boolean[DiningPhilosophers.philosophersCount];
+//  private static final boolean[] forks = new boolean[DiningPhilosophers.philosophersCount];
+  private static final  AtomicIntegerArray forks =
+      new AtomicIntegerArray(DiningPhilosophers.philosophersCount);
 
   /**
    * Номер текущего философа
@@ -39,15 +41,23 @@ public class Philosopher extends Thread {
   /**
    * Конструктор экземпляра философа
    *
-   * @param num номер философа
+   * @param num     номер философа
    * @param eatTime сколько ест философ
    */
   Philosopher(int num, int eatTime) {
     this.num = num;
-    philoForks.put("left", num - 1 < 0 ? forks.length - 1 : num - 1);
-    philoForks.put("right", num);
+    if (num == forks.length() - 1){
+      philoForks.put("right", num - 1);
+      philoForks.put("left", num);
+
+    } else {
+      philoForks.put("left", num - 1 < 0 ? forks.length() - 1 : num - 1);
+      philoForks.put("right", num);
+    }
     this.eatTime = eatTime;
-    Arrays.fill(forks, true);
+    for (int i = 0; i < forks.length(); i++) {
+      forks.set(i, 1);
+    }
   }
 
 
@@ -69,23 +79,23 @@ public class Philosopher extends Thread {
    * @return true если вилки можно взять, false если хотя бы одна из них занята
    */
   private synchronized boolean isForksAvailable() {
-    return forks[philoForks.get("left")] && forks[philoForks.get("right")];
+    return forks.get(philoForks.get("left")) == 1 && forks.get(philoForks.get("right")) == 1;
   }
 
   /**
    * Метод взятия вилок определенным философом
    */
   private synchronized void pickUpForks() {
-    forks[philoForks.get("left")] = false;
-    forks[philoForks.get("right")] = false;
+    forks.set(philoForks.get("left"), 0);
+    forks.set(philoForks.get("right"), 0);
   }
 
   /**
    * Метод откладывания вилок определенными философом
    */
   private synchronized void putDownForks() {
-    forks[philoForks.get("left")] = true;
-    forks[philoForks.get("right")] = true;
+    forks.set(philoForks.get("left"), 1);
+    forks.set(philoForks.get("right"), 1);
   }
 
   /**
@@ -96,28 +106,33 @@ public class Philosopher extends Thread {
     int thinkingTime = randint(1000, 10000);
     boolean isWaiting = false;
     int eatCount = 0;
-
-    out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d гуляет и размышляет\n", num + 1);
+//    out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d гуляет и размышляет\n", num + 1);
+//    try {
+//      Thread.sleep(thinkingTime);
+//    } catch (InterruptedException ignored) {}
     try {
-      Thread.sleep(thinkingTime);
+      Thread.sleep(num * 100L);
     } catch (InterruptedException ignored) {}
-
     while (eatCount != 5) {
       if (!isWaiting) {
-        out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d проголодался и сел на свое место\n", num + 1);
+        out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d проголодался и сел на свое место\n",
+            num + 1);
       }
+
       if (isForksAvailable()) {
         isWaiting = false;
-        out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d приступает к пище, взял вилки: %d %d\n",
+        out.printf(
+            "\033[0;3" + (num + 1) + "mФилософ номер %d приступает к пище, взял вилки: %d %d\n",
             num + 1,
             philoForks.get("left") + 1,
             philoForks.get("right") + 1);
         pickUpForks();
-        eatCount ++;
+        eatCount++;
         try {
           Thread.sleep(eatTime);
-
-          out.printf("\033[0;3" + (num + 1) + "mФилософ номер %d наелся и отправляется на подумать\n", num + 1);
+          out.printf(
+              "\033[0;3" + (num + 1) + "mФилософ номер %d наелся и отправляется на подумать\n",
+              num + 1);
           putDownForks();
           Thread.sleep(thinkingTime);
         } catch (InterruptedException ignored) {

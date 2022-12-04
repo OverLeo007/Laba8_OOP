@@ -36,7 +36,7 @@ public class DiningPhilosophers {
   /**
    * Метод запуска всех философов
    */
-  public void menu(){
+  public void start(){
     philosophers.forEach(Thread::start);
   }
 
