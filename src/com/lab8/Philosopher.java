@@ -5,19 +5,43 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 
+/**
+ * Класс философа, наследованный от класса Thread
+ */
 public class Philosopher extends Thread {
 
+  /**
+   * Поток вывода
+   */
   public static final PrintStream out = new PrintStream(System.out,
       true, StandardCharsets.UTF_8);
 
+  /**
+   * Общие вилки, для всех философов
+   */
   private static final boolean[] forks = new boolean[DiningPhilosophers.philosophersCount];
 
+  /**
+   * Номер текущего философа
+   */
   private final int num;
+  /**
+   * Вилки, которыми пользуется текущий философ
+   */
   private final HashMap<String, Integer> philoForks = new HashMap<>();
 
+  /**
+   * Время, которое ест философ
+   */
   private final int eatTime;
 
 
+  /**
+   * Конструктор экземпляра философа
+   *
+   * @param num номер философа
+   * @param eatTime сколько ест философ
+   */
   Philosopher(int num, int eatTime) {
     this.num = num;
     philoForks.put("left", num - 1 < 0 ? forks.length - 1 : num - 1);
@@ -27,25 +51,46 @@ public class Philosopher extends Thread {
   }
 
 
+  /**
+   * Метод получения случайного числа в заданном диапазоне
+   *
+   * @param min минимальное значение
+   * @param max максимальное значение
+   * @return случайное число, находящиеся между min и max
+   */
   public static int randint(int min, int max) {
     max -= min;
     return (int) (Math.random() * ++max) + min;
   }
 
+  /**
+   * Синхронный метод проверки доступности вилок с заданными номерами
+   *
+   * @return true если вилки можно взять, false если хотя бы одна из них занята
+   */
   private synchronized boolean isForksAvailable() {
     return forks[philoForks.get("left")] && forks[philoForks.get("right")];
   }
 
+  /**
+   * Метод взятия вилок определенным философом
+   */
   private synchronized void pickUpForks() {
     forks[philoForks.get("left")] = false;
     forks[philoForks.get("right")] = false;
   }
 
+  /**
+   * Метод откладывания вилок определенными философом
+   */
   private synchronized void putDownForks() {
     forks[philoForks.get("left")] = true;
     forks[philoForks.get("right")] = true;
   }
 
+  /**
+   * Метод, вызываемый тредом при начале его работы
+   */
   @Override
   public void run() {
     int thinkingTime = randint(1000, 10000);
@@ -85,6 +130,9 @@ public class Philosopher extends Thread {
 
   }
 
+  /**
+   * @return строковое представления философа, с его номером и присвоенными ему вилками
+   */
   @Override
   public String toString() {
     return String.format("Философ номер %d, его вилки: %d %d",
